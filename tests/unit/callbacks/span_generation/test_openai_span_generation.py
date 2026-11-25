@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from openai.types.responses import (
     ResponseFunctionToolCall,
     ResponseOutputMessage,
+    ResponseOutputRefusal,
     ResponseOutputText,
     ResponseReasoningItem,
 )
@@ -75,6 +76,24 @@ def test_after_llm_call_records_tool_call_after_text_and_reasoning() -> None:
 
 def test_after_llm_call_records_text_after_reasoning() -> None:
     attributes = _run_after_llm_call([_reasoning_item(), _text_message("Sunny.")])
+
+    assert attributes[GenAI.OUTPUT] == "Sunny."
+    assert attributes[GenAI.OUTPUT_TYPE] == "text"
+
+
+def test_after_llm_call_records_text_after_refusal_in_same_message() -> None:
+    message = ResponseOutputMessage(
+        id="msg_1",
+        type="message",
+        role="assistant",
+        status="completed",
+        content=[
+            ResponseOutputRefusal(type="refusal", refusal="I can't share that."),
+            ResponseOutputText(type="output_text", text="Sunny.", annotations=[]),
+        ],
+    )
+
+    attributes = _run_after_llm_call([message])
 
     assert attributes[GenAI.OUTPUT] == "Sunny."
     assert attributes[GenAI.OUTPUT_TYPE] == "text"

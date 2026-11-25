@@ -43,11 +43,16 @@ class _OpenAIAgentsSpanGeneration(_SpanGeneration):
         if tool_calls:
             output = tool_calls
         else:
-            for item in response.output:
-                if isinstance(item, ResponseOutputMessage) and item.content:
-                    if isinstance(item.content[0], ResponseOutputText):
-                        output = item.content[0].text
-                        break
+            output = next(
+                (
+                    part.text
+                    for item in response.output
+                    if isinstance(item, ResponseOutputMessage)
+                    for part in item.content
+                    if isinstance(part, ResponseOutputText)
+                ),
+                "",
+            )
 
         input_tokens = 0
         output_tokens = 0
